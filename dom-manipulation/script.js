@@ -44,13 +44,38 @@ function addQuote() {
     return;
   }
 
-  quotes.push(newQuote);        // update quotes array
-  saveQuotes();                 // update local storage
-  populateCategories();         // update dropdown dynamically
-  showRandomQuote();            // display the new quote
+  quotes.push(newQuote);
+  saveQuotes();
+  populateCategories(); // update dropdown dynamically
+  showRandomQuote();
 
   textInput.value = "";
   categoryInput.value = "";
+}
+
+// ======= Create Add Quote Form (Missing Functionality) =======
+function createAddQuoteForm() {
+  const formContainer = document.createElement("div");
+
+  const textInput = document.createElement("input");
+  textInput.id = "newQuoteText";
+  textInput.type = "text";
+  textInput.placeholder = "Enter a new quote";
+
+  const categoryInput = document.createElement("input");
+  categoryInput.id = "newQuoteCategory";
+  categoryInput.type = "text";
+  categoryInput.placeholder = "Enter quote category";
+
+  const addButton = document.createElement("button");
+  addButton.textContent = "Add Quote";
+  addButton.addEventListener("click", addQuote);
+
+  formContainer.appendChild(textInput);
+  formContainer.appendChild(categoryInput);
+  formContainer.appendChild(addButton);
+
+  document.body.appendChild(formContainer);
 }
 
 // ======= Populate Categories =======
@@ -112,55 +137,48 @@ function importFromJsonFile(event) {
   fileReader.readAsText(event.target.files[0]);
 }
 
-// ======= Event Listeners =======
+// ======= Event Listener for New Quote Button =======
 document.getElementById("newQuote")?.addEventListener("click", showRandomQuote);
 
-// ======= Fetch Quotes From Server =======
+// ======= Fetch Quotes from Server (Missing Functionality) =======
 async function fetchQuotesFromServer() {
   try {
     const response = await fetch("https://jsonplaceholder.typicode.com/posts");
-    const data = await response.json();
-    return data.slice(0, 5).map(item => ({ text: item.title, category: "Server" }));
-  } catch (error) {
-    console.error("Error fetching quotes from server:", error);
+    const serverQuotes = await response.json();
+    return serverQuotes.map(sq => ({ text: sq.title, category: "Server" })); // simulate server quotes
+  } catch (err) {
+    console.error("Error fetching quotes from server:", err);
     return [];
   }
 }
 
-// ======= Sync Quotes with Server & Conflict Resolution =======
+// ======= Sync Quotes (Missing Functionality) =======
 async function syncQuotes() {
   const serverQuotes = await fetchQuotesFromServer();
+  if (serverQuotes.length === 0) return;
 
-  serverQuotes.forEach(sq => {
-    const exists = quotes.some(q => q.text === sq.text && q.category === sq.category);
-    if (!exists) {
-      quotes.push(sq);
-    }
-  });
-
+  // Merge: server data takes precedence if conflicts (simulation)
+  quotes = serverQuotes.concat(quotes.filter(q => !serverQuotes.some(sq => sq.text === q.text)));
   saveQuotes();
   populateCategories();
   showRandomQuote();
 
-  // Notification for updates
-  if (!document.getElementById("notification")) {
-    const notifDiv = document.createElement("div");
-    notifDiv.id = "notification";
-    notifDiv.textContent = "Quotes updated from server!";
-    notifDiv.style.background = "#e0f7fa";
-    notifDiv.style.padding = "10px";
-    notifDiv.style.marginTop = "10px";
-    notifDiv.style.border = "1px solid #00796b";
-    document.body.prepend(notifDiv);
-    setTimeout(() => notifDiv.remove(), 5000);
-  }
+  // Notify user
+  const notification = document.createElement("div");
+  notification.textContent = "Quotes synced with server!";
+  notification.style.backgroundColor = "#d4edda";
+  notification.style.padding = "10px";
+  notification.style.margin = "10px 0";
+  document.body.prepend(notification);
+  setTimeout(() => notification.remove(), 5000);
 }
 
-// Auto-sync every 30 seconds
-setInterval(syncQuotes, 30000);
+// Auto-sync every 60 seconds
+setInterval(syncQuotes, 60000);
 
 // ======= Initialize =======
 window.onload = function() {
+  createAddQuoteForm(); // add form dynamically
   populateCategories();
   showRandomQuote();
 };
