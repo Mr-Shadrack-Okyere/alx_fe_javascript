@@ -44,10 +44,10 @@ function addQuote() {
     return;
   }
 
-  quotes.push(newQuote);
-  saveQuotes();
-  populateCategories(); // update dropdown dynamically
-  showRandomQuote();
+  quotes.push(newQuote);        // update quotes array
+  saveQuotes();                 // update local storage
+  populateCategories();         // update dropdown dynamically
+  showRandomQuote();            // display the new quote
 
   textInput.value = "";
   categoryInput.value = "";
@@ -112,30 +112,52 @@ function importFromJsonFile(event) {
   fileReader.readAsText(event.target.files[0]);
 }
 
-// ======= Event Listener for New Quote Button =======
+// ======= Event Listeners =======
 document.getElementById("newQuote")?.addEventListener("click", showRandomQuote);
 
-// ======= Simulate Server Sync & Conflict Resolution =======
-async function syncWithServer() {
+// ======= Fetch Quotes From Server =======
+async function fetchQuotesFromServer() {
   try {
-    const response = await fetch("https://jsonplaceholder.typicode.com/posts"); // mock API
-    const serverQuotes = await response.json();
-
-    // Example: server data takes precedence
-    if (serverQuotes && serverQuotes.length > 0) {
-      quotes = serverQuotes.slice(0, quotes.length); // just a simulation
-      saveQuotes();
-      populateCategories();
-      showRandomQuote();
-      console.log("Synced quotes with server!");
-    }
-  } catch (err) {
-    console.error("Failed to sync with server:", err);
+    const response = await fetch("https://jsonplaceholder.typicode.com/posts");
+    const data = await response.json();
+    return data.slice(0, 5).map(item => ({ text: item.title, category: "Server" }));
+  } catch (error) {
+    console.error("Error fetching quotes from server:", error);
+    return [];
   }
 }
 
-// Auto-sync every 60 seconds
-setInterval(syncWithServer, 60000);
+// ======= Sync Quotes with Server & Conflict Resolution =======
+async function syncQuotes() {
+  const serverQuotes = await fetchQuotesFromServer();
+
+  serverQuotes.forEach(sq => {
+    const exists = quotes.some(q => q.text === sq.text && q.category === sq.category);
+    if (!exists) {
+      quotes.push(sq);
+    }
+  });
+
+  saveQuotes();
+  populateCategories();
+  showRandomQuote();
+
+  // Notification for updates
+  if (!document.getElementById("notification")) {
+    const notifDiv = document.createElement("div");
+    notifDiv.id = "notification";
+    notifDiv.textContent = "Quotes updated from server!";
+    notifDiv.style.background = "#e0f7fa";
+    notifDiv.style.padding = "10px";
+    notifDiv.style.marginTop = "10px";
+    notifDiv.style.border = "1px solid #00796b";
+    document.body.prepend(notifDiv);
+    setTimeout(() => notifDiv.remove(), 5000);
+  }
+}
+
+// Auto-sync every 30 seconds
+setInterval(syncQuotes, 30000);
 
 // ======= Initialize =======
 window.onload = function() {
