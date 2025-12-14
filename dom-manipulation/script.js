@@ -51,9 +51,12 @@ function addQuote() {
 
   textInput.value = "";
   categoryInput.value = "";
+
+  // Post new quote to server
+  postQuoteToServer(newQuote);
 }
 
-// ======= Create Add Quote Form (Missing Functionality) =======
+// ======= Create Add Quote Form =======
 function createAddQuoteForm() {
   const formContainer = document.createElement("div");
 
@@ -140,37 +143,53 @@ function importFromJsonFile(event) {
 // ======= Event Listener for New Quote Button =======
 document.getElementById("newQuote")?.addEventListener("click", showRandomQuote);
 
-// ======= Fetch Quotes from Server (Missing Functionality) =======
+// ======= Fetch Quotes from Server =======
 async function fetchQuotesFromServer() {
   try {
     const response = await fetch("https://jsonplaceholder.typicode.com/posts");
     const serverQuotes = await response.json();
-    return serverQuotes.map(sq => ({ text: sq.title, category: "Server" })); // simulate server quotes
+    return serverQuotes.map(sq => ({ text: sq.title, category: "Server" }));
   } catch (err) {
     console.error("Error fetching quotes from server:", err);
     return [];
   }
 }
 
-// ======= Sync Quotes (Missing Functionality) =======
+// ======= Post Quote to Server =======
+async function postQuoteToServer(quote) {
+  try {
+    await fetch("https://jsonplaceholder.typicode.com/posts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(quote)
+    });
+    console.log("Quote posted to server:", quote);
+  } catch (err) {
+    console.error("Error posting quote to server:", err);
+  }
+}
+
+// ======= Sync Quotes (Fetch + Merge + Conflict Resolution) =======
 async function syncQuotes() {
   const serverQuotes = await fetchQuotesFromServer();
   if (serverQuotes.length === 0) return;
 
-  // Merge: server data takes precedence if conflicts (simulation)
-  quotes = serverQuotes.concat(quotes.filter(q => !serverQuotes.some(sq => sq.text === q.text)));
-  saveQuotes();
-  populateCategories();
-  showRandomQuote();
+  // Merge: server data takes precedence if conflicts
+  const newServerQuotes = serverQuotes.filter(sq => !quotes.some(q => q.text === sq.text));
+  if (newServerQuotes.length > 0) {
+    quotes = newServerQuotes.concat(quotes);
+    saveQuotes();
+    populateCategories();
+    showRandomQuote();
 
-  // Notify user
-  const notification = document.createElement("div");
-  notification.textContent = "Quotes synced with server!";
-  notification.style.backgroundColor = "#d4edda";
-  notification.style.padding = "10px";
-  notification.style.margin = "10px 0";
-  document.body.prepend(notification);
-  setTimeout(() => notification.remove(), 5000);
+    const notification = document.createElement("div");
+    notification.textContent = "Quotes synced with server!";
+    notification.style.backgroundColor = "#d4edda";
+    notification.style.padding = "10px";
+    notification.style.margin = "10px 0";
+    document.body.prepend(notification);
+    setTimeout(() => notification.remove(), 5000);
+  }
 }
 
 // Auto-sync every 60 seconds
@@ -178,7 +197,7 @@ setInterval(syncQuotes, 60000);
 
 // ======= Initialize =======
 window.onload = function() {
-  createAddQuoteForm(); // add form dynamically
+  createAddQuoteForm();
   populateCategories();
   showRandomQuote();
 };
